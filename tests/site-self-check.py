@@ -8,10 +8,11 @@ ROOT = Path(__file__).resolve().parents[1]
 class Page(HTMLParser):
     def __init__(self, path):
         super().__init__()
-        self.path, self.ids, self.links, self.headings = path, [], [], 0
+        self.path, self.ids, self.links, self.headings, self.routes = path, [], [], 0, []
     def handle_starttag(self, tag, attributes):
         attrs = dict(attributes)
         if 'id' in attrs: self.ids.append(attrs['id'])
+        if self.path == 'backoffice.html' and 'data-view' in attrs: self.routes.append(attrs['data-view'])
         if tag == 'h1': self.headings += 1
         if tag == 'img': assert 'alt' in attrs, f'{self.path}: image needs alt'
         for key in ['href', 'src']:
@@ -27,13 +28,16 @@ for path in ROOT.glob('*.html'):
     assert page.headings == 1, f'{path.name}: expected one h1'
     assert not [key for key,count in Counter(page.ids).items() if count > 1], f'{path.name}: duplicate IDs'
     pages[path.name] = page
-assert len(pages) == 13
+assert len(pages) == 14
+for name in pages:
+    html=(ROOT/name).read_text(encoding='utf-8')
+    assert 'https://ayosgawa.com/' in html and 'https://princereyes.com/' in html, f'{name}: missing presentation credit'
 for name,entity in [('blueprinting.html','printing'),('site-support.html','hardware')]:
     html=(ROOT/name).read_text(encoding='utf-8')
     assert f'data-entity="{entity}"' in html
     assert 'assistant-launch' not in html
     assert 'Plan my build' not in html
-    assert 'entity.js?v=entities-4' in html
+    assert 'entity.js?v=backoffice-1' in html
 assert 'Blueprint printing / plan copies</option>' not in (ROOT/'plan.html').read_text(encoding='utf-8')
 checked = 0
 for name,page in pages.items():
@@ -43,9 +47,9 @@ for name,page in pages.items():
         target = unquote(url.path) or name
         assert (ROOT / target).is_file(), f'{name}: missing {target}'
         if url.fragment and target.endswith('.html'):
-            assert url.fragment in pages[target].ids, f'{name}: missing fragment {link}'
+            assert url.fragment in pages[target].ids + pages[target].routes, f'{name}: missing fragment or app route {link}'
         checked += 1
-for name in ['site.css','fonts.css','studio.css','entity.css']:
+for name in ['site.css','fonts.css','studio.css','entity.css','backoffice.css']:
     for url in re.findall(r'url\([\'\"]?([^\)\'\"]+)', (ROOT/name).read_text(encoding='utf-8')):
         assert (ROOT/urlsplit(url).path).is_file(), f'{name}: missing asset {url}'
 assert (ROOT/'site.js').read_text(encoding='utf-8').count("$('button[data-theme]')") == 1
@@ -66,5 +70,5 @@ for mode,pattern in [('light',r':root\{([^}]+)\}'),('dark',r':root\[data-theme=d
         for background in ['bg','surface','soft']: assert contrast(values[foreground],values[background]) >= 4.5
     assert contrast(values['control-line'],values['surface']) >= 3
 assert contrast(tokens['light']['accent-ink'],tokens['light']['yellow']) >= 4.5
-print(f'PASS: thirteen pages, {checked} local links/assets, fragments, image alternatives, unique IDs, UTF-8, and prototype indexing controls.')
+print(f'PASS: fourteen pages, {checked} local links/assets, fragments, image alternatives, unique IDs, UTF-8, presentation credits, and prototype indexing controls.')
 print('PASS: light/dark text tokens meet 4.5:1; input borders meet 3:1 against their surface.')

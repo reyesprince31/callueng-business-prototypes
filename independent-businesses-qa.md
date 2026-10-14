@@ -22,6 +22,7 @@ Checked 14 October 2026 in the Codex in-app Chromium browser. Final asset revisi
 - The Blueprinting mobile menu has four 44 px links and closes with Escape. The hardware mobile header and layouts were visually reviewed.
 - A theme-selector defect was found and fixed in the shared business script. Browser assertions verify that form/category interactions preserve the theme and that the dedicated button changes it and updates its accessible name. Both colour appearances were inspected. Revised screenshots replace the earlier captures.
 - Reviewed browser logs contain no warnings/errors. Temporary responsive overrides were cleared. QA used a separate tab, leaving user tabs and their drafts untouched.
+- GitHub Pages deployment completed successfully. All three primary business pages were opened on the live URL. The hosted Engineer print example produced 12 × 3 = 36 sheets, and the hosted hardware selection supports hauling alone. The homepage hero loaded fully; live browser logs had no warnings/errors. Hosted previews are named `github-pages-*.png`. See `DEPLOYMENT.md`.
 
 ## Source checks
 
