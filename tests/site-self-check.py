@@ -37,7 +37,7 @@ for name,entity in [('blueprinting.html','printing'),('site-support.html','hardw
     assert f'data-entity="{entity}"' in html
     assert 'assistant-launch' not in html
     assert 'Plan my build' not in html
-    assert 'entity.js?v=backoffice-1' in html
+    assert 'entity.js?v=intake-2' in html
 assert 'Blueprint printing / plan copies</option>' not in (ROOT/'plan.html').read_text(encoding='utf-8')
 checked = 0
 for name,page in pages.items():
@@ -49,7 +49,7 @@ for name,page in pages.items():
         if url.fragment and target.endswith('.html'):
             assert url.fragment in pages[target].ids + pages[target].routes, f'{name}: missing fragment or app route {link}'
         checked += 1
-for name in ['site.css','fonts.css','studio.css','entity.css','backoffice.css']:
+for name in ['site.css','fonts.css','studio.css','entity.css','backoffice.css','backoffice-inbox.css']:
     for url in re.findall(r'url\([\'\"]?([^\)\'\"]+)', (ROOT/name).read_text(encoding='utf-8')):
         assert (ROOT/urlsplit(url).path).is_file(), f'{name}: missing asset {url}'
 assert (ROOT/'site.js').read_text(encoding='utf-8').count("$('button[data-theme]')") == 1

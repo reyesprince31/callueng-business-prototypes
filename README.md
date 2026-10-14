@@ -7,7 +7,7 @@ Fourteen static HTML pages demonstrate three independent customer journeys and a
 | Construction | [Open construction demo](https://reyesprince31.github.io/callueng-business-prototypes/) | Explore design concepts and prepare a meeting/build brief |
 | Blueprinting | [Open printing demo](https://reyesprince31.github.io/callueng-business-prototypes/blueprinting.html) | Specify supplied drawings and prepare a print request |
 | Hardware, Rentals & Hauling | [Open service demo](https://reyesprince31.github.io/callueng-business-prototypes/site-support.html) | Request materials, equipment, hauling, or a combination |
-| CMS / CRM backoffice | [Open dashboard demo](https://reyesprince31.github.io/callueng-business-prototypes/backoffice.html) | Switch businesses; edit draft copy; manage fictional leads, contacts, meetings and settings |
+| CMS / CRM backoffice | [Open dashboard demo](https://reyesprince31.github.io/callueng-business-prototypes/backoffice.html) | Switch business-specific request desks, review AI transcripts and handoffs, edit copy, and manage fictional CRM records |
 
 ## Run locally
 
@@ -25,7 +25,7 @@ Open http://127.0.0.1:8767/ . Assets, icons, fonts, and scripts are local; no in
 - No enquiry delivery, live AI, authentication, verified quote, appointment, inventory, order, payment, or print/haul production is connected.
 - Construction client records are fictional. Team role cards are clearly marked proposals. Business identities are separated following the user's instruction.
 - Requested print sizes, finishing, delivery, rates, timings, hardware stock, and equipment availability require the responsible provider's confirmation.
-- Backoffice records are fictional and stored in this browser tab only. Demo publication updates its preview, not the public websites. No actual sign-in, organizational authorization, invitations or project management are implemented.
+- All records are fictional. CMS/CRM edits stay per tab; website demo requests and conversation histories sync across tabs on the same origin using local storage. They do not sync across browsers or devices. Demo publication changes its preview, not the public websites. No actual sign-in, server authorization, invitations or project management are implemented.
 
 ## Source and editing
 
@@ -35,11 +35,14 @@ Open http://127.0.0.1:8767/ . Assets, icons, fonts, and scripts are local; no in
 
 The backoffice uses `backoffice.html`, `backoffice.css` and `backoffice.js`. `BACKOFFICE-ARCHITECTURE.md` maps the proposed Next.js / Convex / Better Auth organization structure; `backoffice-qa.md` records presentation checks. Its CMS demonstrates three copy sections per business rather than every paragraph or media asset. The static backoffice HTML is maintained directly; rebuilding the public pages retains it.
 
+`demo-inbox.js` connects the presentation: Send to demo inbox creates a business-scoped request, website assistant history appears under AI conversations, and a demo team reply appears back in that visitor's widget. `backoffice-inbox.css` supplies the working-desk layout. There are eight backoffice views. `intake-qa.md` documents tests and a presentation walk-through. Existing downloads remain available; old downloads are not imported as submissions. PDF content is never uploaded or stored, and the drawing preview is explicitly illustrative.
+
 ```sh
 node tests/brief-self-check.cjs
 node tests/studio-self-check.cjs
 node tests/printing-self-check.cjs
 node tests/backoffice-self-check.cjs
+node tests/intake-self-check.cjs
 python tests/site-self-check.py
 ```
 

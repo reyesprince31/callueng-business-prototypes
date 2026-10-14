@@ -141,7 +141,13 @@ function supportText(request) {
   return ['CALLUENG HARDWARE, RENTALS & HAULING | SERVICE REQUEST','Independent service business. Contact this provider directly; no construction project is required.','',`Service areas: ${request.kinds.map(key=>SUPPORT_TYPES[key]).join(', ')}`,`City or municipality: ${request.city}`,`Preferred date: ${request.date||'To discuss'}`,'','REQUEST DETAILS',request.note,'','Confirm specifications, quantities, access, availability, delivery or hire terms, destination, and pricing with the approved provider.','This is a local request brief. Nothing was sent, booked, ordered, or paid.'].join('\n');
 }
 
-if (typeof module !== 'undefined') module.exports = {validateProject,validateBrief,briefQuestions,sampleAllowance,briefText,defaultDirection,validateDirection,directionText,conceptPrompts,assistantReply,validateMeeting,meetingHTML,validateSupport,supportText};
+function buildDemoRequest(raw,conversationId=''){
+  const brief=validateBrief(raw),labels={type:'Project type',city:'Location',area:'Floor area, m²',service:'Service',site:'Site information',finish:'Finish preference',budget:'Budget preference',timing:'Preferred timing',drawings:'Available drawings',priorities:'Priorities',notes:'Customer notes'};
+  const fields=Object.entries(brief).map(([key,value])=>[labels[key]||key,key==='service'&&value==='Blueprint / plan set only'?'Plans & engineering only':Array.isArray(value)?value.join(', '):String(value)]);
+  if(raw.direction){const direction=validateDirection(raw.direction);fields.push(['Style being explored',direction.style],['Exterior direction',direction.exteriorStyle||'Not selected yet'],['Interior direction',direction.interiorStyle||'Not selected yet'],['Design notes',direction.note]);}
+  return {title:brief.type+' · '+brief.city,category:brief.service==='Blueprint / plan set only'?'Plans & engineering':/renovat/i.test(brief.service+brief.type)?'Renovation':'Design & build',source:'plan.html',conversationId,fields};
+}
+if (typeof module !== 'undefined') module.exports = {validateProject,validateBrief,briefQuestions,sampleAllowance,briefText,defaultDirection,validateDirection,directionText,conceptPrompts,assistantReply,validateMeeting,meetingHTML,validateSupport,supportText,buildDemoRequest};
 
 const legacyPrintRoute=typeof document!=='undefined'&&!document.body.dataset.entity&&location.pathname.endsWith('/plan.html')&&new URLSearchParams(location.search).get('service')==='Blueprint printing / plan copies';
 if(legacyPrintRoute)location.replace('blueprinting.html#print-request');
@@ -323,7 +329,8 @@ if (typeof document !== 'undefined' && !document.body.dataset.entity && !legacyP
   const chatPanel=$('#design-chat-panel');const chatLaunch=$('#assistant-launch');const chatField=$('#assistant-input');
   const nativePopover=typeof chatPanel.showPopover==='function';
   if(!nativePopover){chatPanel.removeAttribute('popover');chatPanel.classList.add('chat-fallback');chatPanel.hidden=true;}
-  const openChat=()=>{if(nativePopover){if(!chatPanel.matches(':popover-open'))chatPanel.showPopover();}else chatPanel.hidden=false;chatLaunch.setAttribute('aria-expanded','true');chatField.focus({preventScroll:true});};
+  const restoreChat=()=>{const chat=window.CalluengDemoInbox?.current('construction');if(!chat?.messages.length)return;$('#assistant-log').replaceChildren(...chat.messages.map(item=>{const article=make('article',undefined,'assistant-message'+(item.role==='visitor'?' own':''));article.append(make('strong',item.role==='visitor'?'You':item.role==='team'?'Team · demo reply':'Design assistant'),make('p',item.text));return article;}));$('#assistant-log').scrollTop=$('#assistant-log').scrollHeight;};
+  const openChat=()=>{restoreChat();if(nativePopover){if(!chatPanel.matches(':popover-open'))chatPanel.showPopover();}else chatPanel.hidden=false;chatLaunch.setAttribute('aria-expanded','true');chatField.focus({preventScroll:true});};
   const closeChat=()=>{if(nativePopover){if(chatPanel.matches(':popover-open'))chatPanel.hidePopover();}else chatPanel.hidden=true;chatLaunch.setAttribute('aria-expanded','false');};
   chatLaunch.addEventListener('click',()=>{if(chatLaunch.getAttribute('aria-expanded')==='true')closeChat();else openChat();});
   $('#assistant-close').addEventListener('click',()=>{closeChat();chatLaunch.focus({preventScroll:true});});
@@ -340,11 +347,14 @@ if (typeof document !== 'undefined' && !document.body.dataset.entity && !legacyP
     const question=make('article',undefined,'assistant-message own');question.append(make('strong','You'),make('p',value.trim()));
     const response=make('article',undefined,'assistant-message');response.append(make('strong','Design assistant'),make('p',answer.text));const link=make('a',answer.label,'text-link');link.href=answer.href;link.addEventListener('click',closeChat);response.append(link);
     $('#assistant-log').append(question,response);$('#assistant-log').scrollTop=$('#assistant-log').scrollHeight;chatField.value='';chatField.focus({preventScroll:true});
+    try{window.CalluengDemoInbox?.websiteChat('construction',value.trim(),answer.text);restoreChat();}catch(error){const notice=make('article',undefined,'assistant-message');notice.append(make('p','History was not saved: '+error.message));$('#assistant-log').append(notice);}
   };
   $$('[data-chat-prompt]').forEach(button=>button.addEventListener('click',()=>sendChat(button.dataset.chatPrompt)));
   chatField.addEventListener('input',()=>chatField.setCustomValidity(''));
   $('#assistant-form').addEventListener('submit',event=>{event.preventDefault();sendChat(chatField.value);});
   chatField.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();$('#assistant-form').requestSubmit();}});
+  window.addEventListener('storage',event=>{if(event.key===window.CalluengDemoInbox?.KEY)restoreChat();});
+  if(query.has('chat'))openChat();
 
   const form = $('#brief-form');
   if (form) {
@@ -400,6 +410,7 @@ if (typeof document !== 'undefined' && !document.body.dataset.entity && !legacyP
       $('#brief-result-title').tabIndex = -1; $('#brief-result-title').focus({preventScroll: true}); $('#brief-result-title').scrollIntoView({block: 'start', behavior: 'instant'});
     });
     $('#brief-edit').addEventListener('click', () => { $('#brief-result').hidden = true; $('#brief-download-status').hidden = true; form.hidden = false; $('.wizard-nav').hidden = false; showStep(0); });
+    $('#brief-send-demo').addEventListener('click',()=>{if(!completed)return;try{const record=window.CalluengDemoInbox.submitRequest('construction',buildDemoRequest(completed,window.CalluengDemoInbox.current('construction')?.id||''));window.CalluengDemoInbox.receipt($('#brief-download-status'),'construction',record);}catch(error){text('brief-download-status',error.message);$('#brief-download-status').hidden=false;}});
     $('#brief-download').addEventListener('click', () => {
       if (!completed) return;
       download('Callueng-Build-Brief.txt', briefText(completed));

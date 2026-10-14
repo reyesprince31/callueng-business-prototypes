@@ -1,6 +1,6 @@
 # One backoffice, three independent businesses
 
-The presentation uses one `backoffice.html` application with three business workspaces. Each has independent copy, drafts, published demo snapshots, contacts, leads, meetings and settings. It uses fictional records and session storage. There is no authentication, backend, live AI, email, calendar integration or public-site publishing. The CMS editor demonstrates three core sections per business rather than editing every paragraph or image in the thirteen public pages.
+The presentation uses one `backoffice.html` application with three business workspaces. Each has independent copy, drafts, published demo snapshots, contacts, leads, meetings and settings. It also demonstrates business-specific requests and AI conversation histories. CMS/CRM records use session storage; requests and transcripts use bounded local storage on the same origin and sync across tabs. All records are fictional. There is no authentication, backend, live AI, email, calendar integration or public-site publishing. The CMS editor demonstrates three core sections per business rather than editing every paragraph or image in the thirteen public pages.
 
 ## Production shape for Next.js / Convex / Better Auth
 
@@ -15,9 +15,13 @@ Use the Convex + Better Auth Next.js integration for authenticated UI and server
 | Contacts | organizationId; customer details and relationship notes |
 | Leads | organizationId + contactId; source website, stage, submitted brief and next questions |
 | Meetings | organizationId + contactId, optional leadId; date/time/timezone, agenda and status |
+| Customer requests | organizationId + websiteId; immutable submitted specification, review status/checklist, internal notes, file references and linked lead |
+| Conversations and messages | organizationId + websiteId + visitor session; linked request, transcript, assistant/team author, handoff state and timestamps |
 | Audit history | organizationId; actor, action, record and timestamp |
 
 These are proposed application tables. Better Auth's generated organization, member, invitation and session tables remain in the auth component. The website selector is a convenience, not authorization: every Convex query/mutation must authenticate the person, validate membership and the required permission, then read or write records in that organization. Fetching a record by ID must verify its organization. Contacts and leads linked to a meeting must belong to the same business. Index lists by organizationId. The selected organization supplied by the browser must never be trusted on its own. [Convex authentication in functions](https://docs.convex.dev/auth/functions-auth).
+
+The local inbox is a presentation transport only. Replace it with server-side request intake, private file storage, authenticated staff queries and mutations, and a visitor session whose conversation access is verified separately. Pause model replies when a human handles a conversation. Use durable visitor/contact identifiers rather than merging anonymous people by display name. Do not migrate the publicly accessible demo seed data into real customer records.
 
 Suggested application permissions: content read/edit/publish; contacts read/write; leads read/write; meetings read/write; business settings manage. Map them to owner, editor and customer-care roles after discovery. UI visibility follows these permissions; server functions enforce them. An editor should not gain contact access just because both features share a dashboard. No member invitations or permissions are changed in this demo.
 
