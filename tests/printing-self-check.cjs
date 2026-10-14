@@ -1,0 +1,27 @@
+const assert=require('node:assert/strict');
+const {validatePrintRequest,printRequestText,validatePrintFiles,validatePDFSelection}=require('../entity.js');
+const base={job:'Sample drawing set',role:'Architect',revision:'Rev B',size:'A1',colour:'Black & white',scale:'100% / actual size',pages:'12',sets:'3',finish:'Rolled sets',fulfilment:'Pickup',city:'',date:'2026-10-20',notes:''};
+const r=validatePrintRequest(base,'2026-10-14');
+assert.equal(r.sheets,36);
+assert.equal(printRequestText(r,[]).includes('12 drawing pages × 3 sets = 36 printed sheets'),true);
+assert.ok(printRequestText(r,[]).includes('Nothing was uploaded, sent, ordered, or paid'));
+for(const key of ['role','size','colour','scale','finish','fulfilment'])assert.throws(()=>validatePrintRequest({...base,[key]:'Unknown'},'2026-10-14'));
+for(const pages of ['',0,-1,'1.5','1e2','Infinity',2001,[12]])assert.throws(()=>validatePrintRequest({...base,pages},'2026-10-14'));
+for(const sets of [0,101,'2.5','bad'])assert.throws(()=>validatePrintRequest({...base,sets},'2026-10-14'));
+for(const date of ['2026-10-13','2026-02-30','2026-13-01','not a date'])assert.throws(()=>validatePrintRequest({...base,date},'2026-10-14'));
+assert.throws(()=>validatePrintRequest({...base,fulfilment:'Delivery',city:' '},'2026-10-14'));
+assert.equal(validatePrintRequest({...base,fulfilment:'Delivery',city:' Antipolo '},'2026-10-14').city,'Antipolo');
+assert.throws(()=>validatePrintRequest({...base,job:' '},'2026-10-14'));
+assert.throws(()=>validatePrintRequest({...base,notes:'x'.repeat(801)},'2026-10-14'));
+assert.deepEqual(validatePrintFiles([{name:'SET.PDF',size:100}]),[{name:'SET.PDF',size:100}]);
+for(const files of [[{name:'x.exe',size:100}],[{name:'x.pdf',size:0}],[{name:'x.pdf',size:20971521}],Array(11).fill({name:'x.pdf',size:100}),[{name:'x.pdf',size:'100'}]])assert.throws(()=>validatePrintFiles(files));
+assert.ok(printRequestText(r,[{name:'set.pdf',size:100}]).includes('set.pdf'));
+assert.ok(!printRequestText(r,[]).includes('Construction allowance'));
+(async()=>{
+  const fs=require('node:fs');
+  const valid=new File([fs.readFileSync(__dirname+'/fixtures/sample-print.pdf')],'sample-print.pdf');
+  const invalid=new File([fs.readFileSync(__dirname+'/fixtures/invalid-print.pdf')],'invalid-print.pdf');
+  assert.equal((await validatePDFSelection([valid]))[0].name,'sample-print.pdf');
+  await assert.rejects(()=>validatePDFSelection([invalid]),/PDF header/);
+  console.log('PASS: independent print request, strict choices, quantity arithmetic, dates, file boundaries/PDF header, and honest local export.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
